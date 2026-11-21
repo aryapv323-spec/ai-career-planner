@@ -15,7 +15,7 @@ from google.genai import errors, types
 # ---------------------------------------------------------------------------
 # Models are tried in order. If one is busy (503) or out of free quota (429),
 # the app retries it once, then moves on to the next one.
-MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-flash-lite-latest"]
+MODELS = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-flash-lite-latest"]
 TEMPORARY_ERRORS = {429, 500, 503, 504}
 MAX_RESUME_MB = 15  # Gemini accepts files sent this way up to about 20 MB
 

@@ -15,16 +15,16 @@ Don't change anything else.
 
 ## Card 2 — The form (Checkpoint 2)
 ```
-Replace the box with the name input with a form titled "About you". The form asks for:
-- Your name (text)
-- Highest education (dropdown: Plus Two / 12th, Diploma, B.Tech / B.E., B.Sc / BCA, B.Com / BBA, BA, Master's degree, Other)
+
 - Where are you right now? (radio buttons side by side: Student, Graduate looking for a job, Working, want to switch, Career break)
 - Skills you already have (text area)
 - What do you enjoy? (text area)
 - Your goal (text)
 - Hours per week you can study (slider from 2 to 40, starting at 10)
 Put name and education side by side, and skills and interests side by side.
-Add a full-width blue button "🚀 Plan my career".
+Add a full-wReplace the box with the name input with a form titled "About you". The form asks for:
+- Your name (text)
+- Highest education (dropdown: Plus Two / 12th, Diploma, B.Tech / B.E., B.Sc / BCA, B.Com / BBA, BA, Master's degree, Other)idth blue button "🚀 Plan my career".
 When it is pressed: if name, skills or goal is empty, show a warning that lists what is missing.
 Otherwise show the answers as JSON under the heading "What the AI will receive".
 Keep the page style, the title and the footer.
@@ -38,9 +38,21 @@ Write your own prompt first, then paste it where it says.
 Connect my form to Gemini.
 1. At the top of app.py, add a variable SYSTEM_PROMPT with exactly this text:
 """
-[PASTE YOUR PROMPT HERE]
-"""
-2. When the form is submitted and nothing is missing, send all the form answers to Gemini
+[You are a [friendly, honest, and supportive] career counsellor and study mentor for [UGC NET/JRF aspirants in India].
+Given a person’s profile, reply in Markdown with exactly these sections:
+
+## 3 roles that fit you – [Suggest 3 career options: Level 1 – Immediate Fit, Level 2 – Growth Potential, Level 3 – Long-Term Goal; include suitability, qualifications, required skills, and career progression.]
+
+##  Your skill gaps – [A table with columns: Topic/Unit, Current Level, Weakness Identified, and Improvement Strategy; assess strengths and weaknesses using basic-level and advanced-level questions; identify topics requiring improvement.]
+
+## Your study roadmap – [Allow students to choose 30-day, 60-day, or 90-day plans, with 90 days as the maximum; divide into Foundation, Practice, and Revision phases; cover all 10 Paper 1 units and the complete Paper 2 syllabus according to the selected subject; create manageable daily tasks, weekly targets, and revision days; adapt the workload to the student’s available study time.]
+
+Practice questions – [Allow students to independently select Paper 1 or Paper 2, unit, topic, difficulty level, question type, and number of questions; provide unlimited on-demand practice; include MCQs, match-the-following, assertion-reason, chronology, conceptual, and analytical questions; provide answers with explanations; ensure questions are unique and never repeat previously attempted questions; track attempted questions, scores, and weak topics; allow students to practise any topic at any time without following the roadmap.]
+
+## One thing to do today – [Give one specific, achievable task that takes 30–60 minutes, based on the student’s selected plan, current level, and progress; include a clear completion target.]
+
+Rules: [Never promise JRF qualification, jobs, or guaranteed results; use simple English; keep the response under 450 words; follow the official UGC NET syllabus; avoid question repetition; adapt to the user’s available time and level; maximum study plan duration is 90 days; allow flexible topic selection and independent practice anytime; make daily workloads realistic; focus on consistency rather than perfection; adjust missed days without guilt; do not overwhelm users with the entire roadmap at once; encourage daily progress.]
+ Gemini
    with SYSTEM_PROMPT, using the Gemini pattern in .github/copilot-instructions.md.
 3. Show a spinner "Thinking about your career..." while waiting.
 4. Replace the JSON with the AI's answer, shown as Markdown in a bordered box.
