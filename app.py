@@ -126,12 +126,38 @@ PLAN_SCHEMA = S(
     required=["roles", "skill_gaps", "roadmap", "todays_action"],
 )
 
+INTERVIEW_SYSTEM_PROMPT = """You are a friendly interview coach for fresh graduates in India.
+Create exactly 5 easy fresher interview questions for the given postgraduate (PG) degree and
+dream job. Give each a short, simple model answer that uses a realistic college example, such as
+a class project, assignment, presentation, lab, or teamwork experience. Keep answers honest and
+appropriate for someone with no full-time work experience. Never promise a job or salary."""
+
+INTERVIEW_SCHEMA = S(
+    type=T.OBJECT,
+    properties={
+        "questions": S(
+            type=T.ARRAY,
+            min_items=5,
+            max_items=5,
+            items=S(
+                type=T.OBJECT,
+                properties={
+                    "question": S(type=T.STRING),
+                    "answer": S(type=T.STRING),
+                },
+                required=["question", "answer"],
+            ),
+        ),
+    },
+    required=["questions"],
+)
+
 ROADMAP_TABS = [("days_1_30", "Days 1-30"), ("days_31_60", "Days 31-60"), ("days_61_90", "Days 61-90")]
 
 # ---------------------------------------------------------------------------
 # 4. TALKING TO GEMINI
 # ---------------------------------------------------------------------------
-def call_gemini(contents, config):
+def call_gemini(contents, config, models=MODELS):
     """Send a request, retrying busy models and falling back to the next one."""
     client = genai.Client(
         api_key=st.secrets["GEMINI_API_KEY"],
@@ -139,7 +165,7 @@ def call_gemini(contents, config):
         http_options=types.HttpOptions(api_version="v1beta"),
     )
     last_error = None
-    for model in MODELS:
+    for model in models:
         for attempt in range(2):
             try:
                 return client.models.generate_content(model=model, contents=contents, config=config)
@@ -165,6 +191,24 @@ def make_plan(profile_text, pdf_bytes):
         response_schema=PLAN_SCHEMA,
     )
     response = call_gemini(contents, config)
+    if not response.text:
+        raise ValueError("empty answer")
+    return json.loads(response.text)
+
+def make_interview_questions(pg_degree, dream_job):
+    """Ask Gemini for five beginner-friendly interview questions and answers."""
+    contents = f"PG degree: {pg_degree}\nDream job: {dream_job}"
+    config = types.GenerateContentConfig(
+        system_instruction=INTERVIEW_SYSTEM_PROMPT,
+        temperature=0.7,
+        response_mime_type="application/json",
+        response_schema=INTERVIEW_SCHEMA,
+    )
+    response = call_gemini(
+        contents,
+        config,
+        models=["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"],
+    )
     if not response.text:
         raise ValueError("empty answer")
     return json.loads(response.text)
@@ -403,7 +447,54 @@ if "plan" in st.session_state:
             st.markdown(text)
 
 # ---------------------------------------------------------------------------
-# 10. FOOTER
+# 10. FRESHER INTERVIEW QUESTIONS
+# ---------------------------------------------------------------------------
+# This tab creates and remembers practice questions for a PG degree and job.
+interview_tab = st.tabs(["Fresher Interview Questions"])[0]
+with interview_tab:
+    st.subheader("🎓 Fresher Interview Questions")
+    st.write("Enter your PG degree and dream job to practise with college-based examples.")
+
+    with st.form("fresher_interview"):
+        pg_degree = st.text_input("Your PG degree", placeholder="For example, M.Sc. Computer Science")
+        dream_job = st.text_input("Your dream job", placeholder="For example, Data Analyst")
+        interview_submitted = st.form_submit_button(
+            "Fresher Interview Questions",
+            type="primary",
+            width="stretch",
+        )
+
+    if interview_submitted:
+        missing = []
+        if not pg_degree.strip():
+            missing.append("your PG degree")
+        if not dream_job.strip():
+            missing.append("your dream job")
+        if missing:
+            st.warning("Please enter " + " and ".join(missing) + ".")
+        else:
+            error = None
+            with st.spinner("Preparing your interview questions..."):
+                try:
+                    interview_result = make_interview_questions(pg_degree.strip(), dream_job.strip())
+                except Exception as e:
+                    error = friendly_error(e)
+            if error:
+                st.error(error)
+            else:
+                st.session_state["interview_questions"] = interview_result["questions"]
+                st.session_state["interview_profile"] = (pg_degree.strip(), dream_job.strip())
+
+    if "interview_questions" in st.session_state:
+        degree, job = st.session_state["interview_profile"]
+        st.caption(f"Practice for {degree} → {job}")
+        for index, item in enumerate(st.session_state["interview_questions"], start=1):
+            with st.container(border=True):
+                st.markdown(f"**{index}. {item['question']}**")
+                st.write(f"**Model answer:** {item['answer']}")
+
+# ---------------------------------------------------------------------------
+# 11. FOOTER
 # ---------------------------------------------------------------------------
 st.divider()
 st.markdown(
